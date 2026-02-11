@@ -56,7 +56,7 @@ ansible-playbook -i ./inventory/prod.yml site.yml --ask-vault-pass
 ```
 Задание 4*
 ---------------------------------------------------------------------------------------------------------------------------------------------------
-
+```
 docker pull pycontribs/fedora
 docker build -t  ubuntu-ssh -f Dockerfile_ubuntu .
 docker build -t  fedora-ssh -f Dockerfile_fedora .
@@ -67,5 +67,5 @@ docker run -d -it -p 2224:22 --name fedora fedora-ssh:latest
 docker run -d -it -p 2222:22 --name alpine alpine-ssh:latest 
 
 ansible-playbook -i ./inventory/prod.yml site.yml 
-
+```
 
