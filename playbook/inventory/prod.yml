@@ -18,7 +18,14 @@ all:
             ansible_connection: ssh
             ansible_user: root
             ansible_password: alpine123
-            ansible_ssh_common_args: '-o StrictHostKeyChecking=no'
+            ansible_ssh_common_args: '-o StrictHostKeyChecking=no'   
+          fedora:
+            ansible_host: localhost
+            ansible_port: 2224
+            ansible_connection: ssh
+            ansible_user: root
+            ansible_password: fedora123
+            ansible_ssh_common_args: '-o StrictHostKeyChecking=no'  
     local:
         hosts:
           localhost:

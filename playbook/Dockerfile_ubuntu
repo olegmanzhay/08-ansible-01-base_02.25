@@ -1,0 +1,33 @@
+FROM ubuntu:22.04
+
+# Установка базовых пакетов
+RUN apt-get update && apt-get install -y \
+    openssh-server \
+    python3 \
+    python3-pip \
+    sudo \
+    && rm -rf /var/lib/apt/lists/*
+
+# Создание директории для privilege separation
+RUN mkdir -p /var/run/sshd
+
+# Генерация SSH‑ключей
+RUN ssh-keygen -A
+
+# Настройка SSH
+RUN sed -i 's/#PermitRootLogin prohibit-password/PermitRootLogin yes/' /etc/ssh/sshd_config && \
+    sed -i 's/#PasswordAuthentication yes/PasswordAuthentication yes/' /etc/ssh/sshd_config && \
+    echo 'root:ubuntu123' | chpasswd
+
+# Создание пользователя ansible
+RUN useradd -m -s /bin/bash ansible && \
+    echo 'ansible:ansible' | chpasswd && \
+    usermod -aG sudo ansible
+
+# Проверка корректности конфигурации SSH перед запуском
+RUN sshd -t
+
+EXPOSE 22
+
+# Запуск SSH‑сервера с дополнительной проверкой
+CMD ["/usr/sbin/sshd", "-D", "-e", "-d"]

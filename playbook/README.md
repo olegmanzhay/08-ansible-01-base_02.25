@@ -54,3 +54,18 @@ ansible-playbook -i ./inventory/prod.yml site.yml --ask-vault-pass
           localhost:
             ansible_connection: local
 ```
+Задание 4*
+---------------------------------------------------------------------------------------------------------------------------------------------------
+
+docker pull pycontribs/fedora
+docker build -t  ubuntu-ssh -f Dockerfile_ubuntu .
+docker build -t  fedora-ssh -f Dockerfile_fedora .
+docker build -t  alpine-ssh -f Dockerfile_alpine .
+
+docker run -d -it -p 2223:22 --name ubuntu ubuntu-ssh:latest 
+docker run -d -it -p 2224:22 --name fedora fedora-ssh:latest 
+docker run -d -it -p 2222:22 --name alpine alpine-ssh:latest 
+
+ansible-playbook -i ./inventory/prod.yml site.yml 
+
+

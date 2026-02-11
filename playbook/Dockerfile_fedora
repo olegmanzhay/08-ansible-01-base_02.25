@@ -1,0 +1,35 @@
+FROM pycontribs/fedora
+
+# Обновление системы и установка базовых пакетов
+RUN dnf update -y && \
+    dnf install -y \
+        openssh-server \
+        python3 \
+        python3-pip \
+        sudo \
+    && dnf clean all
+
+# Генерация SSH‑ключей
+RUN ssh-keygen -A
+
+# Настройка SSH
+RUN sed -i 's/#PermitRootLogin prohibit-password/PermitRootLogin yes/' /etc/ssh/sshd_config && \
+    sed -i 's/#PasswordAuthentication yes/PasswordAuthentication yes/' /etc/ssh/sshd_config && \
+    echo 'root:fedora123' | chpasswd
+
+# Создание пользователя ansible
+RUN useradd -m -s /bin/bash ansible && \
+    echo 'ansible:ansible' | chpasswd && \
+    usermod -aG wheel ansible
+
+# Создание необходимых директорий
+RUN mkdir -p /var/run/sshd
+
+# Проверка корректности конфигурации SSH перед запуском
+RUN sshd -t
+
+
+EXPOSE 22
+
+# Запуск SSH‑сервера
+CMD ["/usr/sbin/sshd", "-D"]
