@@ -24,11 +24,11 @@ localhost                  : ok=3    changed=0    unreachable=0    failed=0    s
 Вместо Centos7 ичпользовал образ alphine и настройку через Dockerfile делал  
 Ubuntu поставил чистым и руками сделал ssh соединение 
 
-Dockerfile alphine
+Dockerfile alphine  https://github.com/olegmanzhay/08-ansible-01-base_02.25/blob/main/playbook/Dockerfile
 
 Скорректировал inventory и playbook
-- 
-- 
+- https://github.com/olegmanzhay/08-ansible-01-base_02.25/blob/main/playbook/inventory/prod.yml
+- https://github.com/olegmanzhay/08-ansible-01-base_02.25/blob/main/playbook/site.yml
 
 Запустил
 ```
