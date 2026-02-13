@@ -1,0 +1,84 @@
+---
+- name: Install Vector
+  hosts: ubuntu
+  become: yes
+  vars:
+    vector_version: "0.30.0"
+    vector_install_dir: "/opt/vector"
+    vector_config_path: "/etc/vector/vector.toml"
+    vector_binary_path: "{{ vector_install_dir }}/vector-x86_64-unknown-linux-musl/bin/vector"
+    vector_data_dir: "/var/lib/vector"  # новая переменная для директории данных
+
+  tasks:
+    - name: Create data directory for Vector
+      file:
+        path: "{{ vector_data_dir }}"
+        state: directory
+        mode: '0755'
+        owner: root
+        group: root
+
+    - name: Create installation directory
+      file:
+        path: "{{ vector_install_dir }}"
+        state: directory
+        mode: '0755'
+
+    - name: Download Vector to remote host
+      get_url:
+        url: "https://packages.timber.io/vector/{{ vector_version }}/vector-{{ vector_version }}-x86_64-unknown-linux-musl.tar.gz"
+        dest: "/tmp/vector.tar.gz"
+
+    - name: Extract Vector archive on remote host
+      unarchive:
+        src: "/tmp/vector.tar.gz"
+        dest: "{{ vector_install_dir }}"
+        remote_src: yes
+
+    - name: Make binary executable
+      file:
+        path: "{{ vector_binary_path }}"
+        mode: '0755'
+
+    - name: Create config directory
+      file:
+        path: "/etc/vector"
+        state: directory
+
+    - name: Deploy corrected config with existing data_dir
+      copy:
+        content: |
+          data_dir = "{{ vector_data_dir }}"  # используем переменную
+
+          [sources.in]
+          type = "demo_logs"
+          format = "json"
+
+          [sinks.out]
+          type = "console"
+          inputs = ["in"]
+          encoding.codec = "json"
+        dest: "{{ vector_config_path }}"
+
+    - name: Start Vector
+      shell: |
+        nohup {{ vector_binary_path }} --config-toml {{ vector_config_path }} > /var/log/vector.log 2>&1 &
+      args:
+        creates: /var/run/vector.pid
+
+    - name: Wait for Vector to start
+      pause:
+        seconds: 5
+
+    - name: Verify installation
+      command: "{{ vector_binary_path }} validate {{ vector_config_path }}"
+      register: validation
+      ignore_errors: yes
+
+    - name: Show validation result
+      debug:
+        msg: |
+          Validation result:
+          - Success: {{ validation is success }}
+          - Output: {{ validation.stdout | default('No output') }}
+          - Errors: {{ validation.stderr | default('None') }}

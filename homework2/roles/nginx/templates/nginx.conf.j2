@@ -1,0 +1,32 @@
+user root;
+worker_processes 1;
+error_log {{ nginx_install_dir }}/logs/error.log;
+pid {{ nginx_install_dir }}/logs/nginx.pid;
+
+events {
+    worker_connections 1024;
+}
+
+http {
+    include {{ nginx_install_dir }}/conf/mime.types;
+    default_type application/octet-stream;
+
+    sendfile on;
+    keepalive_timeout 65;
+
+    server {
+        listen 80;
+        server_name localhost;
+
+        location / {
+            root {{ nginx_install_dir }}/html;
+            index index.html index.htm;
+            allow all;
+        }
+
+        error_page 500 502 503 504 /50x.html;
+        location = /50x.html {
+            root {{ nginx_install_dir }}/html;
+        }
+    }
+}

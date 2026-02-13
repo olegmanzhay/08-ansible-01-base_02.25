@@ -1,0 +1,63 @@
+---
+all:
+  children:
+    fedora:
+      hosts:
+        fedora-container-1:
+          ansible_host: localhost
+          ansible_port: 2224
+          ansible_connection: ssh
+          # ansible_user: "{{ ubuntu_username }}"
+          ansible_user: root
+          # ansible_password: "{{ ubuntu_password }}"
+          ansible_password: fedora123
+          ansible_ssh_common_args: '-o StrictHostKeyChecking=no'
+        fedora-container-2:
+          ansible_host: localhost
+          ansible_port: 2226
+          ansible_connection: ssh
+          # ansible_user: "{{ ubuntu_username }}"
+          ansible_user: root
+          # ansible_password: "{{ ubuntu_password }}"
+          ansible_password: fedora123
+          ansible_ssh_common_args: '-o StrictHostKeyChecking=no'
+    alpine:
+      hosts:
+        alpine-container-1:
+          ansible_host: localhost
+          ansible_port: 2222
+          ansible_connection: ssh
+          # ansible_user: "{{ ubuntu_username }}"
+          ansible_user: root
+          # ansible_password: "{{ ubuntu_password }}"
+          ansible_password: alpine123
+          ansible_ssh_common_args: '-o StrictHostKeyChecking=no'
+        alpine-container-2:
+          ansible_host: localhost
+          ansible_port: 2227
+          ansible_connection: ssh
+          # ansible_user: "{{ ubuntu_username }}"
+          ansible_user: root
+          # ansible_password: "{{ ubuntu_password }}"
+          ansible_password: alpine123
+          ansible_ssh_common_args: '-o StrictHostKeyChecking=no'
+    ubuntu:
+      hosts:
+        ubuntu-container-1:
+          ansible_host: localhost
+          ansible_port: 2223
+          ansible_connection: ssh
+          # ansible_user: "{{ ubuntu_username }}"
+          ansible_user: root
+          # ansible_password: "{{ ubuntu_password }}"
+          ansible_password: ubuntu123
+          ansible_ssh_common_args: '-o StrictHostKeyChecking=no'
+        ubuntu-container-2:
+          ansible_host: localhost
+          ansible_port: 2225
+          ansible_connection: ssh
+          # ansible_user: "{{ ubuntu_username }}"
+          ansible_user: root
+          # ansible_password: "{{ ubuntu_password }}"
+          ansible_password: ubuntu123
+          ansible_ssh_common_args: '-o StrictHostKeyChecking=no'

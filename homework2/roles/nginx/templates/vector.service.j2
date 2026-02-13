@@ -1,0 +1,13 @@
+[Unit]
+Description=Vector
+After=network.target
+
+[Service]
+Type=simple
+User=root
+ExecStart={{ vector_install_dir }}/vector --config {{ vector_config_path }}
+Restart=always
+RestartSec=5
+
+[Install]
+WantedBy=multi-user.target

@@ -1,0 +1,9 @@
+[sources.demo_logs]
+type = "file"
+include = ["/var/log/*.log"]
+ignore_older = 86400
+
+[sinks.console]
+type = "console"
+inputs = ["demo_logs"]
+encoding.codec = "json"

@@ -1,0 +1,166 @@
+---
+- name: Install nginx on Ubuntu
+  hosts: ubuntu
+  become: yes
+  vars:
+    nginx_version: "1.29.5"
+    nginx_download_url: "https://nginx.org/download/nginx-{{ nginx_version }}.tar.gz"
+    nginx_install_dir: "/opt/nginx"
+
+  tasks:
+    - name: Download Nginx distrib
+      get_url:
+        url: "{{ nginx_download_url }}"
+        dest: "/tmp/nginx-{{ nginx_version }}.tar.gz"
+      register: download_result
+      until: download_result is success
+      retries: 3
+      delay: 5
+
+    - name: Extract Nginx distrib
+      unarchive:
+        src: "/tmp/nginx-{{ nginx_version }}.tar.gz"
+        dest: "/tmp/"
+        remote_src: yes
+        creates: "/tmp/nginx-{{ nginx_version }}"
+      register: extract_result
+
+    - name: Fail if extraction failed
+      fail:
+        msg: "Failed to extract Nginx archive"
+      when: extract_result is failed
+
+    - name: Install build dependencies for Ubuntu
+      apt:
+        name:
+          - build-essential
+          - libpcre3-dev
+          - libssl-dev
+          - zlib1g-dev
+        state: present
+        update_cache: yes
+
+    - name: Configure Nginx build
+      command: >
+        ./configure
+        --prefix={{ nginx_install_dir }}
+        --with-http_ssl_module
+        --with-http_gzip_static_module
+      args:
+        chdir: "/tmp/nginx-{{ nginx_version }}"
+      register: configure_result
+      failed_when: configure_result.rc != 0
+
+    - name: Debug configure output on failure
+      debug:
+        msg: |
+          Configure failed with return code: {{ configure_result.rc }}
+          Stderr: {{ configure_result.stderr }}
+          Stdout: {{ configure_result.stdout }}
+      when: configure_result is failed
+
+    - name: Verify Makefile exists after configure
+      stat:
+        path: "/tmp/nginx-{{ nginx_version }}/Makefile"
+      register: makefile_check
+      when: configure_result is success
+
+    - name: Fail if Makefile was not created
+      fail:
+        msg: |
+          Makefile not found after running ./configure.
+          This usually means the configure script failed or dependencies are missing.
+      when:
+        - configure_result is success
+        - not makefile_check.stat.exists
+
+    - name: Create required Nginx directories
+      file:
+        path: "{{ nginx_install_dir }}/{{ item }}"
+        state: directory
+        owner: root
+        group: root
+        mode: 0755
+      loop:
+        - conf
+        - logs
+        - html
+
+    - name: Build Nginx
+      make:
+        chdir: "/tmp/nginx-{{ nginx_version }}"
+      when: configure_result is success and makefile_check.stat.exists
+      register: build_result
+
+    - name: Install Nginx
+      make:
+        target: install
+        chdir: "/tmp/nginx-{{ nginx_version }}"
+      when: build_result is success
+
+    - name: Create basic nginx.conf
+      template:
+        src: /home/admin-oleg/Desktop/Netology/08-ansible-01-base_02.25/homework2/roles/nginx/templates/nginx.conf.j2
+        dest: "{{ nginx_install_dir }}/conf/nginx.conf"
+      vars:
+        nginx_install_dir_safe: "{{ nginx_install_dir }}"
+      when: build_result is success
+
+    - name: Create index.html file
+      copy:
+        content: "<html><body><h1>Nginx is working!</h1></body></html>"
+        dest: "{{ nginx_install_dir }}/html/index.html"
+
+    - name: Test Nginx configuration
+      command: "{{ nginx_install_dir }}/sbin/nginx -t"
+      register: config_test
+      changed_when: false
+
+    - name: Stop any Nginx process (container‑safe)
+      shell: |
+        pkill nginx || true
+      args:
+        executable: /bin/bash
+      changed_when: false
+      ignore_errors: yes
+      when: build_result is success
+
+    - name: Wait for port 80 to be free (with retry)
+      wait_for:
+        host: 127.0.0.1
+        port: 80
+        state: stopped
+        delay: 2
+        timeout: 30
+      ignore_errors: yes
+      when: build_result is success
+
+    - name: Test Nginx configuration before start
+      command: /opt/nginx/sbin/nginx -t
+      register: nginx_config_test
+      ignore_errors: yes
+      when: build_result is success
+
+    - name: Start Nginx
+      command: /opt/nginx/sbin/nginx
+      register: nginx_start
+      when: build_result is success
+
+    - name: Wait for Nginx to initialize (5 seconds)
+      pause:
+        seconds: 5
+      when: nginx_start is success
+
+
+    - name: Wait for Nginx to start
+      wait_for:
+        port: 80
+        delay: 2
+        timeout: 10
+      ignore_errors: yes
+
+    - name: Test Nginx HTTP response
+      uri:
+        url: http://localhost/
+        method: GET
+      register:
